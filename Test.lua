@@ -1,49 +1,98 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("MH+ Scripts", "DarkTheme")
-local Tab = Window:NewTab("Rebirth")
-local Section = Tab:NewSection("Rebirth")
---Rebirth
-Section:NewButton("Rebirth", "ButtonInfo", function()
-game:GetService("ReplicatedStorage").resources.remotes.remote_functions.rebirth:InvokeServer()
-end)
---Layout
-Section:NewButton("Layout", "ButtonInfo", function()
-    local ohString1 = "Load"
-local ohString2 = "Layout2"
+if game.PlaceId == 9103460924 then
+    local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    local hum = char.Humanoid
+    hum.UseJumpPower = true
+    local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+    local window = OrionLib:MakeWindow({Name = GameName, HidePremium = false, IntroEnabled = false, IntroText = "Welcome!", SaveConfig = true, ConfigFolder = "OrionTest"})
 
-game:GetService("ReplicatedStorage").resources.remotes.remote_functions.layouts:InvokeServer(ohString1, ohString2)
-end)
---No Timer
-local Tab = Window:NewTab("No Timer")
---No Timer Auto rebirth
-local Section = Tab:NewSection("No Timer Auto loadout")
-Section:NewToggle("No Timer Rebirth", "", function(v)
-    getgenv().autoopen = v
-    while true do
-        if not getgenv().autoopen then return end
-        game:GetService("ReplicatedStorage").resources.remotes.remote_functions.rebirth:InvokeServer()
-        wait(0.5)
+-- Defualt walkspeed/jumppower
+
+local defaults = {
+    walkspeed = hum.WalkSpeed,
+    jumppower = hum.JumpPower
+}
+
+---------------------------------------
+
+local old = nil
+old = hookmetamethod(hum, '__index', newcclosure(function(slf, idx)
+    if slf == hum and not checkcaller() then
+        if tostring(idx) == "WalkSpeed" then
+            return defaults.walkspeed
+        elseif tostring(idx) == "JumpPower" then
+            return defaults.jumppower
+        end
     end
-end)
---No Timer Auto loadout
-Section:NewToggle("No Timer loadout", "", function(v)
-    getgenv().autoopen = v
-    while true do
-        if not getgenv().autoopen then return end
-        local ohString1 = "Load"
-local ohString2 = "Layout2"
+    return old(slf, idx)
+end))
 
-game:GetService("ReplicatedStorage").resources.remotes.remote_functions.layouts:InvokeServer(ohString1, ohString2)
-    wait(1.5)
+-- Tabs
+
+local tab1 = window:MakeTab {
+    Name = "Local"
+}
+
+local tab2 = window:MakeTab {
+    Name = "Teleport"
+}
+---------------------------------------
+
+tab1:AddLabel("LocalPlayer")
+
+tab1:AddSlider {
+    Name = "WalkSpeed",
+    Min = defaults.walkspeed,
+    Max = 100,
+    Default = defaults.walkspeed,
+    Color = Color3.fromRGB(0, 0, 255),
+    Increment = 1,
+    ValueName = "Velocity",
+    Callback = function(val)
+        hum.WalkSpeed = val
     end
-end)
---push
-local Tab = Window:NewTab("Push")
-local Section = Tab:NewSection("Push")
---unbox 100 mag boxes
-Section:NewButton("Unbox 100 Mag Boxes", "ButtonInfo", function()
-local ohString1 = "Magnificent"
-local ohNumber2 = 100
+}
 
-game:GetService("ReplicatedStorage").resources.remotes.remote_functions.mystery_box_multi:InvokeServer(ohString1, ohNumber2)
-end)
+tab1:AddSlider {
+    Name = "JumpPower",
+    Min = defaults.jumppower,
+    Max = 100,
+    Default = defaults.jumppower,
+    Color = Color3.fromRGB(0, 0, 255),
+    Increment = 1,
+    ValueName = "Height",
+    Callback = function(val)
+        hum.JumpPower = val
+    end
+}
+
+---------------------------------------
+
+tab2:AddLabel("Teleport")
+
+Drop = tab2:AddDropdown({
+	    Name = "Areas",
+	    Default = "Noob Island",
+	    Options = {"Noob Island", "Magma Hills", "Sand Canyons", "Poisoned Cove", "Icy Planes", "Plasma Ruins", "Graveyard"},
+	    Callback = function(value)
+	    end    
+})
+
+
+tab2:AddButton {
+	Name = "Click To Tp",
+	Callback = function()
+        local args = {
+		    [1] = game:GetService("ReplicatedStorage").Data[game.Players.LocalPlayer.Name].Stats,
+		    [2] = workspace:FindFirstChild(game.Players.LocalPlayer.Name.."'s Base"),
+		    [3] = game.Players.LocalPlayer.Name,
+		    [4] = Drop.Value}
+        game:GetService("ReplicatedStorage").Events.ToMap:FireServer(unpack(args))
+  	end    
+}
+end
+
+
+---------------------------------------
+
